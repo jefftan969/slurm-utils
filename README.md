@@ -1,4 +1,4 @@
-# Slurm Utilities + Dashboards
+# Slurm Utilities
 
 ## Show available GPUs per node
 
@@ -16,36 +16,28 @@ v100-16 available:
   v030: 3/8
 ```
 
-## Show pending jobs, sorted by priority
+## Show queued jobs (sorted by priority) and running jobs (sorted by node name)
 
-Run `./slurm_pending_jobs.py`. Example result:
-
-```
-Pending Jobs:
-Priority=142800	Job=30277396	Queued=2025-04-07T02:27:41	User=cis200000p/jefftan969	GPUs=v100-32:4	Notes=PENDING Reason=Resources Dependency=(null)
-Priority=111404	Job=30284220	Queued=2025-04-07T15:45:26	User=cis200000p/jefftan969	GPUs=h100:8	Notes=PENDING Reason=ReqNodeNotAvail,_UnavailableNodes:w[001-009] Dependency=(null)
-```
-
-Filter the result by partition, GPU type, or node name:
-```
-./slurm_pending_jobs.py --part GPU-shared
-./slurm_pending_jobs.py --gpu h100-80
-./slurm_pending_jobs.py --node w
-```
-
-## Show running jobs, sorted by node
-
-Run `./slurm_running_jobs.py`. Example result:
+Run `./slurm_jobs.py`. Example result:
 
 ```
-Running Jobs:
-Node=v016	Job=30565232	Started=2025-04-18T08:28:39	User=cis200000p/jefftan969	GPUs=v100-16:1
-Node=v034	Job=30564882	Started=2025-04-18T09:38:22	User=cis200000p/jefftan969	GPUs=v100-32:4
+======== Queued Jobs: ========
+JobID     Priority    TimeQueued     PlanStart      PlanEnd        Duration    User                 GPUs
+30479540  5115841     250416-142444  250420-093638  250425-093638  5-00:00:00  cis200000p/jefftan   GPUs=h100:4   	Notes=Resources
+30284220  145884      250407-154526  250425-014856  250427-014856  2-00:00:00  cis200000p/jefftan   GPUs=h100-80:8 	Notes=ReqNodeNotAvail,_UnavailableNodes:w[001-002]
+JobID     Priority    TimeQueued     PlanStart      PlanEnd        Duration    User                 GPUs
+======== Running Jobs: ========
+JobID     Node        TimeQueued     TimeStart      TimeEnd        Duration    User                 GPUs
+30647173  v001        250419-102948  250419-103308  250419-223308  12:00:00    cis200000p/jefftan   GPUs=v100-16:1   
+30542305  v003        250418-000901  250418-011152  250423-011152  5-00:00:00  cis200000p/jefftan   GPUs=v100-32:3
+JobID     Node        TimeQueued     TimeStart      TimeEnd        Duration    User                 GPUs
 ```
 
-Filter the result by partition, GPU type, or node name:
+Filter the result by partition, GPU type, or node type:
 ```
-./slurm_running_jobs.py --part GPU-shared
-./slurm_running_jobs.py --gpu h100-80
-./slurm_running_jobs.py --node w
+./slurm_jobs.py -p GPU-shared
+./slurm_jobs.py -g h100-80
+./slurm_jobs.py -n w
 ```
+
+Pass `-q` to show only queued jobs, or `-r` to show only running jobs.

@@ -47,9 +47,9 @@ def main(part_type=None, gpu_type=None, node_type=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--part", type=str, default=None, help="Limit search to a partition (e.g. 'ROBO')")
-    parser.add_argument("--gpu", type=str, default=None, help="Limit search to a GPU type (e.g. 'h100')")
-    parser.add_argument("--node", type=str, default=None, help="Limit search to a node type (e.g. 'w')")
+    parser.add_argument("-p", "--part", type=str, default=None, help="Limit search to a partition (e.g. 'ROBO')")
+    parser.add_argument("-g", "--gpu", type=str, default=None, help="Limit search to a GPU type (e.g. 'h100')")
+    parser.add_argument("-n", "--node", type=str, default=None, help="Limit search to a node type (e.g. 'w')")
     args = parser.parse_args()
 
     main(part_type=args.part, gpu_type=args.gpu, node_type=args.node)
