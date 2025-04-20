@@ -8,7 +8,9 @@ def print_job_info(ranking_criteria, job_id, job_info):
     """Print a job_info dict from `scontrol show jobs`, according to some
     ranking criteria (e.g. priority or node_name)"""
     alloc_tres = dict(elt.split("=", 1) for elt in job_info["TRES"].split(",") if "=" in elt)
-    alloc_count = int(alloc_tres["gres/gpu"]) if "gres/gpu" in alloc_tres else 0
+    gpu_count = int(alloc_tres["gres/gpu"]) if "gres/gpu" in alloc_tres else 0
+    memory = alloc_tres["mem"]
+    cpus = int(alloc_tres["cpu"])
     user_id = job_info["UserId"].split("(")[0]
     group_id = job_info["GroupId"].split("(")[0]
     gpus = job_info["TresPerNode"] if "TresPerNode" in job_info else job_info["TresPerJob"]
@@ -20,7 +22,7 @@ def print_job_info(ranking_criteria, job_id, job_info):
     duration = job_info["TimeLimit"]
     time_limit = job_info["TimeLimit"]
     notes = "" if job_info["Reason"] in ("None", "Priority", "Dependency") else "\tNotes=" + job_info["Reason"]
-    print(f"{job_id:<8}  {ranking_criteria:<10}  {queue_time:<13}  {start_time:<13}  {end_time:<13}  {duration:<10}  {group_id}/{user_id:<8}  GPUs={gpus:<9}{notes}")
+    print(f"{job_id:<8} {ranking_criteria:<10} {queue_time:<13} {start_time:<13} {end_time:<13} {duration:<10} {group_id}/{user_id:<8} {gpus:<9} {memory:<8} {cpus:<3}{notes}")
 
 
 def main(part_type=None, gpu_type=None, node_type=None, print_running=True, print_queued=True):
@@ -51,7 +53,7 @@ def main(part_type=None, gpu_type=None, node_type=None, print_running=True, prin
 
     if print_queued:
         print("======== Queued Jobs: ========")
-        header_queued = "JobID     Priority    TimeQueued     PlanStart      PlanEnd        Duration    User                 GPUs"
+        header_queued = "JobID    Priority   TimeQueued    PlanStart     PlanEnd       Duration   User                GPU       Mem      CPU"
         print(header_queued)
         for priority, job_id, job_info in sorted(queued_jobs, key=lambda x: (-x[0], x[1])):
             # Print queued jobs sorted by priority (descending) and job_id (low2high)
@@ -60,7 +62,7 @@ def main(part_type=None, gpu_type=None, node_type=None, print_running=True, prin
 
     if print_running:
         print("======== Running Jobs: ========")
-        header_running = "JobID     Node        TimeQueued     TimeStart      TimeEnd        Duration    User                 GPUs"
+        header_running = "JobID    Node       TimeQueued    TimeStart     TimeEnd       Duration   User                GPU       Mem      CPU"
         print(header_running)
         for node_list, job_id, job_info in sorted(running_jobs):
             # Print runnings jobs sorted by node_name (ascending) and job_id (ascending)

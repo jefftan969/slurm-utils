@@ -18,6 +18,9 @@ def main(part_type=None, gpu_type=None, node_type=None):
         if part_key not in node_info["Partitions"] or gpu_key not in node_info["Gres"] or node_key not in node_info["NodeAddr"]:
             # No available GPUs of the specified partition/GPU/node type
             continue
+        if "DOWN" in node_info["State"]:
+            # Node is down
+            continue
 
         gpu_avail = node_info["Gres"].split(":", 2)
         assert len(gpu_avail) == 3 and gpu_avail[0] == "gpu", gpu_avail
@@ -26,24 +29,31 @@ def main(part_type=None, gpu_type=None, node_type=None):
 
         # Extract number of available and allocated GPUs
         cfg_tres = dict(elt.split("=", 1) for elt in node_info["CfgTRES"].split(",") if len(elt) > 0)
-        cfg_count = int(cfg_tres["gres/gpu"])
-        assert cfg_count == gpu_count, (cfg_count, gpu_count)
+        cfg_gpus = int(cfg_tres["gres/gpu"])
+        cfg_mem = round(int(node_info["RealMemory"]) // 1024)
+        cfg_cpus = int(cfg_tres["cpu"])
+        assert cfg_gpus == gpu_count, (cfg_gpus, gpu_count)
         alloc_tres = dict(elt.split("=", 1) for elt in node_info["AllocTRES"].split(",") if len(elt) > 0)
-        alloc_count = int(alloc_tres["gres/gpu"]) if "gres/gpu" in alloc_tres else 0
+        alloc_gpus = int(alloc_tres["gres/gpu"]) if "gres/gpu" in alloc_tres else 0
+        alloc_mem = round(int(node_info["AllocMem"]) // 1024)
+        alloc_cpus = int(alloc_tres["cpu"]) if "cpu" in alloc_tres else 0
 
         node_name = node_info["NodeName"]
         if gpu_type not in avail_gpus:
             avail_gpus[gpu_type] = []
-        avail_gpus[gpu_type].append((node_name, alloc_count, gpu_count))
+        avail_gpus[gpu_type].append((node_name, alloc_gpus, alloc_mem, alloc_cpus, cfg_gpus, cfg_mem, cfg_cpus))
 
     for gpu_type, avail_list in avail_gpus.items():
-        # Print available and allocated GPUs, in total and separately for each node
-        total_avail = sum(gpu_count - alloc_count for node_name, alloc_count, gpu_count in avail_list)
-        total_count = sum(gpu_count for node_name, alloc_count, gpu_count in avail_list)
-        print(f"{gpu_type} available: {total_avail}/{total_count}")
-        for node_name, alloc_count, gpu_count in avail_list:
-            if alloc_count < gpu_count:
-                print(f"  {node_name}: {gpu_count - alloc_count}/{gpu_count}")
+        # Print available and allocated GPUs+Memory+CPUs, in total and separately for each node
+        total_avail_gpus = 0
+        total_count_gpus = 0
+        for node_name, alloc_gpus, alloc_mem, alloc_cpus, cfg_gpus, cfg_mem, cfg_cpus in avail_list:
+            total_avail_gpus += cfg_gpus - alloc_gpus
+            total_count_gpus += cfg_gpus
+        print(f"{gpu_type} available: {total_avail_gpus}/{total_count_gpus}")
+        for node_name, alloc_gpus, alloc_mem, alloc_cpus, cfg_gpus, cfg_mem, cfg_cpus in avail_list:
+            if alloc_gpus < gpu_count:
+                print(f"  {node_name:<10}: {cfg_gpus - alloc_gpus}/{cfg_gpus}  ({str(cfg_mem - alloc_mem) + 'G':>5}/{str(cfg_mem) + 'G':<5} Mem  {cfg_cpus - alloc_cpus}/{cfg_cpus} CPU)")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
