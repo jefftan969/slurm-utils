@@ -16,9 +16,9 @@ def print_job_info(ranking_criteria, job_id, job_info):
     gpus = job_info["TresPerNode"] if "TresPerNode" in job_info else job_info["TresPerJob"]
     gpus = gpus.replace("gres:gpu:", "")
     dependency = None if job_info["Dependency"] == "(null)" else job_info["Dependency"].replace("afterany:", "after").replace("afterok:", "after").replace("_*", "").replace("(unfulfilled)", "")
-    queue_time = dependency or job_info["AccrueTime"].replace("-", "").replace("T", "-").replace(":", "")[2:]
-    start_time = job_info["StartTime"].replace("-", "").replace("T", "-").replace(":", "")[2:]
-    end_time = job_info["EndTime"].replace("-", "").replace("T", "-").replace(":", "")[2:]
+    queue_time = dependency or job_info["AccrueTime"].replace("-", "").replace("T", "-").replace(":", "")[2:].replace("known", "Unknown")
+    start_time = job_info["StartTime"].replace("-", "").replace("T", "-").replace(":", "")[2:].replace("known", "Unknown")
+    end_time = job_info["EndTime"].replace("-", "").replace("T", "-").replace(":", "")[2:].replace("known", "Unknown")
     duration = job_info["TimeLimit"]
     time_limit = job_info["TimeLimit"]
     notes = "" if job_info["Reason"] in ("None", "Priority", "Dependency") else "\tNotes=" + job_info["Reason"]
