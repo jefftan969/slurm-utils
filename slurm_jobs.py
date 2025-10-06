@@ -13,7 +13,7 @@ def print_job_info(ranking_criteria, job_id, job_info):
     cpus = int(alloc_tres["cpu"])
     user_id = job_info["UserId"].split("(")[0]
     group_id = job_info["GroupId"].split("(")[0]
-    gpus = job_info["TresPerNode"] if "TresPerNode" in job_info else job_info["TresPerJob"]
+    gpus = job_info["TresPerNode"] if "TresPerNode" in job_info else job_info["TresPerJob"] if "TresPerJob" in job_info else "0"
     gpus = gpus.replace("gres:gpu:", "")
     dependency = None if job_info["Dependency"] == "(null)" else job_info["Dependency"].replace("afterany:", "after").replace("afterok:", "after").replace("_*", "").replace("(unfulfilled)", "")
     queue_time = dependency or job_info["AccrueTime"].replace("-", "").replace("T", "-").replace(":", "")[2:].replace("known", "Unknown")
@@ -25,18 +25,21 @@ def print_job_info(ranking_criteria, job_id, job_info):
     print(f"{job_id:<8} {ranking_criteria:<10} {queue_time:<13} {start_time:<13} {end_time:<13} {duration:<10} {group_id}/{user_id:<8} {gpus:<9} {memory:<8} {cpus:<3}{notes}")
 
 
-def main(part_type=None, gpu_type=None, node_type=None, print_running=True, print_queued=True):
+def main(part_type=None, gpu_type=None, node_type=None, user=None, print_running=True, print_queued=True, cpu_jobs=False):
     # Keys to limit results to a given partition, gpu type, or node type
     part_key = "" if part_type is None else part_type
-    gpu_key = "gres:gpu" if gpu_type is None else f"gres:gpu:{gpu_type}"
+    gpu_key = "" if cpu_jobs else "gres:gpu" if gpu_type is None else f"gres:gpu:{gpu_type}"
     node_key = "" if node_type is None else node_type
+    user_key = "" if user is None else user
 
     jobs = os.popen("scontrol show jobs").read().strip().split("\n\n")
     queued_jobs = []
     running_jobs = []
     for job_str in jobs:
         job_info = dict(line.strip().split("=", 1) for line in job_str.split() if "=" in line)
-        if part_key not in job_info["Partition"] or gpu_key not in job_str or node_key not in job_info["NodeList"]:
+        if (part_key not in job_info["Partition"] or gpu_key not in job_str or
+            node_key not in job_info["NodeList"] or user_key not in job_info["UserId"]
+        ):
             # Restrict results to the specified partition/GPU/node type
             continue
 
@@ -75,11 +78,13 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--part", type=str, default=None, help="Limit search to a partition (e.g. 'ROBO')")
     parser.add_argument("-g", "--gpu", type=str, default=None, help="Limit search to a GPU type (e.g. 'h100')")
     parser.add_argument("-n", "--node", type=str, default=None, help="Limit search to a node type (e.g. 'w')")
+    parser.add_argument("-u", "--user", type=str, default=None, help="Limit search to a user")
     parser.add_argument("-q", "--queued", default=False, action="store_true", help="Only print queued jobs")
     parser.add_argument("-r", "--running", default=False, action="store_true", help="Only print running jobs")
+    parser.add_argument("-c", "--cpu", default=False, action="store_true", help="Also print CPU jobs")
     args = parser.parse_args()
 
     main(
-        part_type=args.part, gpu_type=args.gpu, node_type=args.node,
-        print_running=not args.queued, print_queued=not args.running,
+        part_type=args.part, gpu_type=args.gpu, node_type=args.node, user=args.user,
+        print_running=not args.queued, print_queued=not args.running, cpu_jobs=args.cpu
     )

@@ -58,7 +58,7 @@ def main(part_type=None, gpu_type=None, node_type=None):
             if len(x) == 7:
                 node_name, alloc_gpus, alloc_mem, alloc_cpus, cfg_gpus, cfg_mem, cfg_cpus = x
                 if alloc_gpus < cfg_gpus:
-                    print(f"  {node_name:<10}: {cfg_gpus - alloc_gpus}/{cfg_gpus}  ({str(cfg_mem - alloc_mem) + 'G':>5}/{str(cfg_mem) + 'G':<5} Mem  {cfg_cpus - alloc_cpus}/{cfg_cpus} CPU)")
+                    print(f"  {node_name:<10}: {cfg_gpus - alloc_gpus}/{cfg_gpus}  (Mem {str(cfg_mem - alloc_mem) + 'G':>5}/{str(cfg_mem) + 'G':<5} | CPU {cfg_cpus - alloc_cpus:>3}/{cfg_cpus:<3})")
             elif len(x) == 3:
                 node_name, node_state, node_reason = x
                 print(f"  {node_name:<10}: {node_state} ({node_reason})")
